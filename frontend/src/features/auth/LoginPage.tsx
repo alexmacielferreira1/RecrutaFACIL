@@ -1,2 +1,75 @@
-import {useState} from 'react'; import {useNavigate} from 'react-router-dom'
-export function LoginPage(){const nav=useNavigate();const[error,setError]=useState('');return <div className="login-page"><div className="login-art"><div className="brand"><div className="brand-mark">GF</div><div><strong>Gestão de Pessoas</strong><small>People OS</small></div></div><div className="login-copy"><span>PEOPLE OS · GESTÃO 360º</span><h1>Decisões de pessoas,<br/>com mais contexto.</h1><p>Desempenho, metas, PDI e estrutura organizacional em uma única experiência.</p><div className="login-proof"><b>127</b><span>colaboradores</span><b>4,3</b><span>nota média</span><b>82%</b><span>engajamento</span></div></div></div><div className="login-form"><div className="login-box"><span className="eyebrow">BEM-VINDO DE VOLTA</span><h2>Entrar na plataforma</h2><p>Use sua conta corporativa para continuar.</p><label>Empresa<input defaultValue="Softmind Tecnologia"/></label><label>E-mail<input type="email" defaultValue="mariana.costa@empresa.com"/></label><label>Senha<input type="password" defaultValue="demo1234"/></label><button onClick={()=>{setError('');nav('/dashboard')}}>Entrar</button><button className="secondary" onClick={()=>nav('/dashboard')}>Entrar em modo demonstração</button>{error&&<small>{error}</small>}<div className="login-help">Esqueceu a senha? <b>Fale com o administrador</b></div></div></div></div>}
+import { FormEvent, useState } from 'react'
+import { ArrowRight, BarChart3, BriefcaseBusiness, LockKeyhole, Mail, ShieldCheck, Target, Users } from 'lucide-react'
+
+export type LoginCredentials = { email: string; password: string }
+
+type LoginPageProps = {
+  onLogin: (credentials: LoginCredentials) => void | Promise<void>
+}
+
+const highlights = [
+  { icon: Users, label: 'Colaboradores ativos', value: '1.248', delta: '+12%' },
+  { icon: BarChart3, label: 'Engajamento', value: '87%', delta: '+8%' },
+  { icon: Target, label: 'Metas atingidas', value: '92%', delta: '+15%' },
+]
+
+export function LoginPage({ onLogin }: LoginPageProps) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError('')
+    setSubmitting(true)
+    try {
+      await onLogin({ email, password })
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Não foi possível entrar.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <main className="login-page">
+      <section className="login-story" aria-label="MEU RH">
+        <div className="brand"><BriefcaseBusiness size={28} /> MEU <strong>RH</strong></div>
+        <div className="story-copy">
+          <span className="accent-line" />
+          <h1>Pessoas no centro.<br />Decisões mais claras.</h1>
+          <p>Uma jornada integrada para encontrar, desenvolver e valorizar talentos.</p>
+        </div>
+        <div className="highlight-stack">
+          {highlights.map(({ icon: Icon, label, value, delta }) => (
+            <article className="highlight-card" key={label}>
+              <span className="highlight-icon"><Icon size={22} /></span>
+              <span><small>{label}</small><strong>{value}</strong></span>
+              <em>{delta}</em>
+            </article>
+          ))}
+        </div>
+        <div className="story-orb story-orb-one" /><div className="story-orb story-orb-two" />
+      </section>
+
+      <section className="login-form-panel">
+        <form className="login-form" onSubmit={submit}>
+          <span className="user-mark"><Users size={30} /></span>
+          <h2>Acesse sua conta</h2>
+          <p>Bem-vindo de volta ao seu espaço de pessoas.</p>
+          <label>E-mail corporativo
+            <span className="input-wrap"><Mail size={19} /><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu.nome@empresa.com.br" required /></span>
+          </label>
+          <label>Senha
+            <span className="input-wrap"><LockKeyhole size={19} /><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Digite sua senha" required /></span>
+          </label>
+          <div className="login-options"><label className="remember"><input type="checkbox" /> Lembrar de mim</label><a href="#recuperar">Esqueci minha senha</a></div>
+          {error && <p className="form-error" role="alert">{error}</p>}
+          <button className="primary-button" type="submit" disabled={submitting}>{submitting ? 'Entrando...' : 'Entrar'} <ArrowRight size={18} /></button>
+          <p className="security-note"><ShieldCheck size={18} /> Ambiente seguro para sua jornada profissional</p>
+        </form>
+      </section>
+    </main>
+  )
+}

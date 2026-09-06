@@ -1,15 +1,47 @@
-import { apiSend } from '../../lib/api-client'
+export async function login(
+  credentials: LoginCredentials,
+  fetcher: FetchLike = fetch,
+  apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1',
+): Promise<Session> {
+  const demoEnabled = import.meta.env.VITE_DEMO_MODE === 'true'
 
-export type LoginInput = {
-  organization: string
-  email: string
-  password: string
-}
+  if (demoEnabled) {
+    if (
+      credentials.email === 'demo@recrutafacil.com' &&
+      credentials.password === 'Demo123!'
+    ) {
+      return {
+        accessToken: 'demo-token',
+        user: {
+          name: 'Usuário Demo',
+          email: 'demo@recrutafacil.com',
+          roles: ['admin', 'recruiter'],
+          permissions: ['recruitment:read', 'recruitment:write'],
+        },
+      }
+    }
 
-export function login(payload: LoginInput) {
-  return apiSend<{ status: string }>('/api/v1/auth/login', 'POST', payload)
-}
+    throw new Error('E-mail ou senha inválidos.')
+  }
 
-export function logout() {
-  return apiSend<{ status: string }>('/api/v1/auth/logout', 'POST', {})
+  const response = await fetcher(`${apiUrl}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials),
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('E-mail ou senha inválidos.')
+    }
+
+    throw new Error('Não foi possível entrar. Tente novamente.')
+  }
+
+  const data = (await response.json()) as LoginResponse
+
+  return {
+    accessToken: data.access_token,
+    user: data.user,
+  }
 }

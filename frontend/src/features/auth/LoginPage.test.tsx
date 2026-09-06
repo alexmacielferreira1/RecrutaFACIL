@@ -1,25 +1,26 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { LoginPage } from './LoginPage'
-import * as authApi from './auth-api'
 
-test('submits credentials and confirms access', async () => {
-  vi.spyOn(authApi, 'login').mockResolvedValue({ status: 'ok' })
-  render(
-    <QueryClientProvider client={new QueryClient()}>
+describe('LoginPage', () => {
+  it('envia credenciais válidas para abrir o dashboard', async () => {
+    const onLogin = vi.fn()
+    render(
       <MemoryRouter>
-        <LoginPage />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
+        <LoginPage onLogin={onLogin} />
+      </MemoryRouter>,
+    )
 
-  fireEvent.change(screen.getByLabelText(/empresa/i), { target: { value: 'acme' } })
-  fireEvent.change(screen.getByLabelText(/e-mail/i), { target: { value: 'pessoa@example.com' } })
-  fireEvent.change(screen.getByLabelText(/senha/i), { target: { value: 'senha-segura-123' } })
-  fireEvent.click(screen.getByRole('button', { name: /entrar/i }))
+    await userEvent.type(screen.getByLabelText('E-mail corporativo'), 'rh@meurh.com.br')
+    await userEvent.type(screen.getByLabelText('Senha'), 'Segura123!')
+    await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
 
-  expect(await screen.findByText('Acesso confirmado.')).toBeVisible()
+    expect(onLogin).toHaveBeenCalledWith({
+      email: 'rh@meurh.com.br',
+      password: 'Segura123!',
+    })
+  })
 })
